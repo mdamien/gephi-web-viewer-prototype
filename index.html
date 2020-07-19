@@ -53,6 +53,7 @@ function parseJSON(data) {
       y: node.y,
       size: node.size + 3,
       color: node.color,
+      attributes: node.attributes,
     });
   }
 
@@ -63,7 +64,7 @@ function parseJSON(data) {
       id: edge.id,
       source: edge.source,
       target: edge.target,
-      // size: edge.size,
+      size: edge.size,
       color: edge.color,
       type: 'curve',
     });
@@ -77,6 +78,22 @@ function nodeByID(s, id) {
 }
 
 function getNodeInfos(s, e) {
+  var attributes = e.data.node.attributes;
+  var attributes_text = '';
+
+  for (attribute in attributes) {
+    var value = attributes[attribute];
+    attributes_text += attribute + ': '+ value + '\n'
+  }
+
+  if (attributes_text) {
+    attributes_text += '\n\n'
+  }
+
+  return attributes_text + getNodeLinkInfos(s, e);
+}
+
+function getNodeLinkInfos(s, e) {
     var incoming = [];
     var outcoming = [];
 
@@ -110,15 +127,15 @@ function getNodeInfos(s, e) {
     mutual = mutual.map(node => nodeByID(s, node).label)
 
     if (mutual.length) {
-      mutual = 'Mutal links: \n' + mutual.join('\n') + '\n\n';
+      mutual = 'Mutal links:\n' + mutual.join('\n') + '\n\n';
     }
     if (incoming.length) {
-      incoming = 'Incoming links: \n' + incoming.join('\n') + '\n\n';
+      incoming = 'Incoming links:\n' + incoming.join('\n') + '\n\n';
     }
     if (outcoming.length) {
-      outcoming = 'Outcoming link: \n' + outcoming.join('\n') + '\n\n';
+      outcoming = 'Outcoming link:\n' + outcoming.join('\n') + '\n\n';
     }
-    return mutual + incoming + outcoming
+    return 'Connections:\n\n'mutual + incoming + outcoming
 }
 
 $.getJSON('data.json', function (data) {
@@ -159,6 +176,7 @@ $.getJSON('data.json', function (data) {
 
   s.bind('clickStage', function(e) {
     filter.undo().apply();
+    $('#infopane').hide();
   });
 });
 </script>
