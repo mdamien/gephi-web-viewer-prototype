@@ -11,8 +11,27 @@
       position: absolute;
       background: #eee;
     }
+    #infopane {
+      top: 0;
+      bottom: 0;
+      right: 0;
+      position: absolute;
+      width: 230px;
+      display: none;
+      padding: 10px;
+      background-color: rgb(249, 247, 237);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    #infopane > div {
+      margin: 10px;
+      overflow-x: auto;
+    }
   </style>
   <div id="graph-container"></div>
+  <div id="infopane">
+    <h2 id="ip-node-name"></h2>
+  </div>
+
 </div>
 <script>
 
@@ -69,5 +88,27 @@ $.getJSON('data.json', function (data) {
     },
   });
 
+  s.camera.goTo({
+    x: 0,
+    y: 0,
+    angle: 0,
+    ratio: 3
+  });
+
+  var filter = new sigma.plugins.filter(s);
+
+  s.bind('clickNode', function(e) {
+    filter.undo()
+    filter.neighborsOf(e.data.node.id).apply();
+
+    $('#infopane').show()
+    $('#ip-node-name').text(e.data.node.label)
+
+    // s.refresh()
+  });
+
+  s.bind('clickStage', function(e) {
+    filter.undo().apply();
+  });
 });
 </script>
