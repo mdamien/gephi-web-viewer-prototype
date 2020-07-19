@@ -30,6 +30,7 @@
   <div id="graph-container"></div>
   <div id="infopane">
     <h2 id="ip-node-name"></h2>
+    <pre id="ip-infos"></pre>
   </div>
 
 </div>
@@ -71,6 +72,10 @@ function parseJSON(data) {
   return g;
 }
 
+function nodeByID(s, id) {
+  return s.graph.nodes().filter(node => node['id'] === id).pop();
+}
+
 $.getJSON('data.json', function (data) {
   var g = parseJSON(data);
 
@@ -104,6 +109,26 @@ $.getJSON('data.json', function (data) {
     $('#infopane').show()
     $('#ip-node-name').text(e.data.node.label)
 
+    var incoming = '';
+    var outcoming = '';
+
+    g.edges.forEach(function(edge) {
+      if (edge.source == e.data.node.id) {
+        outcoming += nodeByID(s, edge.target).label + '\n';
+      }
+      else if (edge.target == e.data.node.id) {
+        incoming += nodeByID(s, edge.source).label + '\n';
+      }
+    })
+
+    if (incoming) {
+      incoming = 'Incoming: \n' + incoming + '\n';
+    }
+    if (outcoming) {
+      outcoming = 'Outcoming: \n' + outcoming + '\n';
+    }
+
+    $('#ip-infos').text(incoming+outcoming)
     // s.refresh()
   });
 
