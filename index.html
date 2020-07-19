@@ -1,3 +1,4 @@
+<script src="static/jquery.js" ></script>
 <script src="static/sigma.js" ></script>
 <script src="static/plugins.js" ></script>
 <div>
@@ -14,26 +15,59 @@
   <div id="graph-container"></div>
 </div>
 <script>
-g = sigma.plugins.generators.grid(10,10);
 
-s = new sigma({
-  graph: g,
-  renderer: {
-    container: 'graph-container'
-  },
-  settings: {
-    hideEdgesOnMove: true,
-    defaultLabelColor: '#fff',
-    defaultNodeColor: '#999',
-    defaultEdgeColor: '#333',
-    edgeColor: 'default'
+function parseJSON(data) {
+  var g = {
+    nodes: [],
+    edges: []
+  };
+
+  for (i=0; i<data.nodes.length; i++){
+    var node = data.nodes[i];
+    // s.addNode(id,data.nodes[i]);
+
+    g.nodes.push({
+      id: node.id,
+      label: node.label,
+      x: node.x,
+      y: node.y,
+      size: node.size + 3,
+      color: node.color,
+    });
   }
-});
 
-sigma.layouts.startForceLink(s, {
-  worker: true,
-  autoStop: true,
-  background: true,
-  easing: 'cubicInOut'
+  for(j=0; j<data.edges.length; j++){
+    var edge = data.edges[j];
+
+    g.edges.push({
+      id: edge.id,
+      source: edge.source,
+      target: edge.target,
+      // size: edge.size,
+      color: edge.color,
+      type: 'curve',
+    });
+  }
+
+  return g;
+}
+
+$.getJSON('data.json', function (data) {
+  var g = parseJSON(data);
+
+  var s = new sigma({
+    graph: g, 
+    renderer: {
+      container: 'graph-container',
+      type: sigma.renderers.canvas,
+    },
+    settings: {
+      hideEdgesOnMove: true,
+      maxNodeSize: 10,
+      minNodeSize: 0.00001,
+      autoRescale: false,
+    },
+  });
+
 });
 </script>
