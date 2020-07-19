@@ -57,10 +57,10 @@
 	var kruegerZ = xy( 13.4,  56.5);
 	var deneb    = xy(218.7,   8.3);
 
-	L.marker(     sol).addTo(map).bindPopup(      'Sol');
-	L.marker(   mizar).addTo(map).bindPopup(    'Mizar');
+	L.circleMarker(sol).addTo(map).bindPopup('Sol');
+	L.marker(mizar).addTo(map).bindPopup('Mizar');
 	L.marker(kruegerZ).addTo(map).bindPopup('Krueger-Z');
-	L.marker(   deneb).addTo(map).bindPopup(    'Deneb');
+	L.marker(deneb).addTo(map).bindPopup('Deneb');
 
 	var travel = L.polyline([sol, deneb]).addTo(map);
 
