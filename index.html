@@ -76,6 +76,51 @@ function nodeByID(s, id) {
   return s.graph.nodes().filter(node => node['id'] === id).pop();
 }
 
+function getNodeInfos(s, e) {
+    var incoming = [];
+    var outcoming = [];
+
+    s.graph.edges().forEach(function(edge) {
+      if (edge.source == e.data.node.id) {
+        outcoming.push(nodeByID(s, edge.target).id);
+      }
+      else if (edge.target == e.data.node.id) {
+        incoming.push(nodeByID(s, edge.source).id);
+      }
+    })
+
+    var incoming_filtered = [];
+    var outcoming_filtered = [];
+    var mutual = [];
+    incoming.forEach(function(node) {
+      if (outcoming.indexOf(node) === -1) {
+        incoming_filtered.push(node)
+      } else {
+        mutual.push(node)
+      }
+    });
+    outcoming.forEach(function(node) {
+      if (incoming.indexOf(node) === -1) {
+        outcoming_filtered.push(node)
+      }
+    });
+
+    incoming = incoming_filtered.map(node => nodeByID(s, node).label)
+    outcoming = outcoming_filtered.map(node => nodeByID(s, node).label)
+    mutual = mutual.map(node => nodeByID(s, node).label)
+
+    if (mutual.length) {
+      mutual = 'Mutal links: \n' + mutual.join('\n') + '\n\n';
+    }
+    if (incoming.length) {
+      incoming = 'Incoming links: \n' + incoming.join('\n') + '\n\n';
+    }
+    if (outcoming.length) {
+      outcoming = 'Outcoming link: \n' + outcoming.join('\n') + '\n\n';
+    }
+    return mutual + incoming + outcoming
+}
+
 $.getJSON('data.json', function (data) {
   var g = parseJSON(data);
 
@@ -109,27 +154,7 @@ $.getJSON('data.json', function (data) {
     $('#infopane').show()
     $('#ip-node-name').text(e.data.node.label)
 
-    var incoming = '';
-    var outcoming = '';
-
-    g.edges.forEach(function(edge) {
-      if (edge.source == e.data.node.id) {
-        outcoming += nodeByID(s, edge.target).label + '\n';
-      }
-      else if (edge.target == e.data.node.id) {
-        incoming += nodeByID(s, edge.source).label + '\n';
-      }
-    })
-
-    if (incoming) {
-      incoming = 'Incoming: \n' + incoming + '\n';
-    }
-    if (outcoming) {
-      outcoming = 'Outcoming: \n' + outcoming + '\n';
-    }
-
-    $('#ip-infos').text(incoming+outcoming)
-    // s.refresh()
+    $('#ip-infos').text(getNodeInfos(s, e))
   });
 
   s.bind('clickStage', function(e) {
