@@ -14,7 +14,7 @@
       position: absolute;
       background: #eee;
     }
-    #infopane {
+    #rightpanel {
       top: 0;
       bottom: 0;
       right: 0;
@@ -24,9 +24,9 @@
       padding: 10px;
       background-color: rgb(249, 247, 237);
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      overflow: scroll;
+      overflow: auto;
     }
-    #mainpanel {
+    #leftpanel {
       margin-top: 50px;
       margin-left: 25px;
       background: #fff;
@@ -36,14 +36,17 @@
       position: fixed;
       top: 0;
       padding: 10px;
+      width: 300px;
+      overflow: auto;
+      max-height: 50%;
     }
   </style>
 </head>
 </body>
 <div>
   <div id="graph-container"></div>
-  <div id="mainpanel"></div>
-  <div id="infopane"></div>
+  <div id="leftpanel"></div>
+  <div id="rightpanel"></div>
 </div>
 
 <script>
@@ -179,15 +182,35 @@ function getNodeLinkInfos(s, e) {
     return html
 }
 
-function renderMainPanel(config_data) {
-  $('#mainpanel').text(config_data.text.title)
+function renderLeftPanel(config_data, g) {
+  html = "<h3>" + config_data.text.title + "</h3>"
+  html += "<p><input type='text' placeholder='search'/></p>"
+  html += "<p id='search-results'></p>"
+  $('#leftpanel').html(html)
+  $('#leftpanel input').on('input', function() {
+    var q = $(this).val().toLowerCase();
+    var results = [];
+    if (q) {
+      results = g.nodes.filter(node => node.label.toLowerCase().indexOf(q) !== -1);
+    }
+    html_results = ''
+    if (results.length) {
+      html_results = '<ul>'
+      results.forEach(node => {
+        html_results += '<li>' + node.label + '</li>'
+      })
+      html_results += '</ul>'
+    }
+    $('#search-results').html(html_results);
+  })
 }
 
 $.getJSON('data.json', function (data) {
   $.getJSON('config.json', function (config_data) {
-    renderMainPanel(config_data);
 
     var g = parseJSON(data);
+
+    renderLeftPanel(config_data, g);
 
     var s = new sigma({
       graph: g, 
@@ -212,17 +235,16 @@ $.getJSON('data.json', function (data) {
 
     var filter = new sigma.plugins.filter(s);
 
-
     s.bind('clickNode', function(e) {
       filter.undo()
       filter.neighborsOf(e.data.node.id).apply();
-      $('#infopane').html(getNodeInfos(s, e))
-      $('#infopane').show()
+      $('#rightpanel').html(getNodeInfos(s, e))
+      $('#rightpanel').show()
     });
 
     s.bind('clickStage', function(e) {
       filter.undo().apply();
-      $('#infopane').hide();
+      $('#rightpanel').hide();
     });
   });
 });
