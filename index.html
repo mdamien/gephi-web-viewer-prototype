@@ -50,6 +50,10 @@
 </div>
 
 <script>
+
+var s; // sigma instance
+var s_filter; // sigma filter plugin
+
 function parseJSON(data) {
   var g = {
     nodes: [],
@@ -87,20 +91,20 @@ function parseJSON(data) {
   return g;
 }
 
-function nodeByID(s, id) {
+function nodeByID(id) {
   return s.graph.nodes().filter(node => node['id'] === id).pop();
 }
 
-function getNodeInfos(s, e) {
-  html = "<h2>" + e.data.node.label + "</h2>";
-  html += getNodeAttributesInfos(s, e)
+function getNodeInfos(node) {
+  html = "<h2>" + node.label + "</h2>";
+  html += getNodeAttributesInfos(node)
   html += '<hr>'
-  html += getNodeLinkInfos(s, e)
+  html += getNodeLinkInfos(node)
   return html
 }
 
-function getNodeAttributesInfos(s, e) {
-  var attributes = e.data.node.attributes;
+function getNodeAttributesInfos(node) {
+  var attributes = node.attributes;
   var attributes_text = '';
 
   for (attribute in attributes) {
@@ -115,16 +119,16 @@ function getNodeAttributesInfos(s, e) {
   return attributes_text;
 }
 
-function getNodeLinkInfos(s, e) {
+function getNodeLinkInfos(node) {
     var incoming = [];
     var outcoming = [];
 
     s.graph.edges().forEach(function(edge) {
-      if (edge.source == e.data.node.id) {
-        outcoming.push(nodeByID(s, edge.target).id);
+      if (edge.source == node.id) {
+        outcoming.push(nodeByID(edge.target).id);
       }
-      else if (edge.target == e.data.node.id) {
-        incoming.push(nodeByID(s, edge.source).id);
+      else if (edge.target == node.id) {
+        incoming.push(nodeByID(edge.source).id);
       }
     })
 
@@ -144,16 +148,20 @@ function getNodeLinkInfos(s, e) {
       }
     });
 
-    incoming = incoming_filtered.map(node => nodeByID(s, node).label)
-    outcoming = outcoming_filtered.map(node => nodeByID(s, node).label)
-    mutual = mutual.map(node => nodeByID(s, node).label)
+    incoming = incoming_filtered.map(node => nodeByID(node))
+    outcoming = outcoming_filtered.map(node => nodeByID(node))
+    mutual = mutual.map(node => nodeByID(node))
 
     var mutual_html = ''
     if (mutual.length) {
       mutual_html = '<strong>Mutal</strong><br>'
       mutual_html += '<ul>'
       mutual.forEach(node => {
-        mutual_html += '<li>' + node + '</li>'
+        mutual_html += '<li>'
+        mutual_html += '<a href="#' + node.id + '">'
+        mutual_html += node.label
+        mutual_html += '</a>'
+        mutual_html += '</li>'
       })
       mutual_html += '</ul>'
     }
@@ -162,7 +170,11 @@ function getNodeLinkInfos(s, e) {
       incoming_html = '<strong>Incoming</strong><br>'
       incoming_html += '<ul>'
       incoming.forEach(node => {
-        incoming_html += '<li>' + node + '</li>'
+        incoming_html += '<li>'
+        incoming_html += '<a href="#' + node.id + '">'
+        incoming_html += node.label
+        incoming_html += '</a>'
+        incoming_html += '</li>'
       })
       incoming_html += '</ul>'
     }
@@ -171,7 +183,11 @@ function getNodeLinkInfos(s, e) {
       outcoming_html = '<strong>Outcoming</strong><br>'
       outcoming_html += '<ul>'
       outcoming.forEach(node => {
-        outcoming_html += '<li>' + node + '</li>'
+        outcoming_html += '<li>'
+        outcoming_html += '<a href="#' + node.id + '">'
+        outcoming_html += node.label
+        outcoming_html += '</a>'
+        outcoming_html += '</li>'
       })
       outcoming_html += '</ul>'
     }
@@ -182,7 +198,7 @@ function getNodeLinkInfos(s, e) {
     return html
 }
 
-function renderLeftPanel(config_data, g) {
+function renderLeftPanel(config_data) {
   html = "<h3>" + config_data.text.title + "</h3>"
   html += "<p><input type='text' placeholder='search'/></p>"
   html += "<p id='search-results'></p>"
@@ -191,13 +207,17 @@ function renderLeftPanel(config_data, g) {
     var q = $(this).val().toLowerCase();
     var results = [];
     if (q) {
-      results = g.nodes.filter(node => node.label.toLowerCase().indexOf(q) !== -1);
+      results = s.graph.nodes().filter(node => node.label.toLowerCase().indexOf(q) !== -1);
     }
     html_results = ''
     if (results.length) {
       html_results = '<ul>'
       results.forEach(node => {
-        html_results += '<li>' + node.label + '</li>'
+        html_results += '<li>'
+        html_results += '<a href="#' + node.id + '">'
+        html_results += node.label
+        html_results += '</a>'
+        html_results += '</li>'
       })
       html_results += '</ul>'
     }
@@ -205,14 +225,26 @@ function renderLeftPanel(config_data, g) {
   })
 }
 
+function locationHashChanged() {
+  if (location.hash) {
+    var node_id = location.hash.substring(1)
+    selectNode(node_id);
+  }
+}
+
+function selectNode(node_id) {
+    s_filter.undo()
+    s_filter.neighborsOf(node_id).apply();
+    $('#rightpanel').html(getNodeInfos(nodeByID(node_id)))
+    $('#rightpanel').show()
+}
+
 $.getJSON('data.json', function (data) {
   $.getJSON('config.json', function (config_data) {
 
     var g = parseJSON(data);
 
-    renderLeftPanel(config_data, g);
-
-    var s = new sigma({
+    s = new sigma({
       graph: g, 
       renderer: {
         container: 'graph-container',
@@ -220,11 +252,12 @@ $.getJSON('data.json', function (data) {
       },
       settings: {
         hideEdgesOnMove: true,
-        maxNodeSize: 10,
-        minNodeSize: 0.00001,
         autoRescale: false,
+        zoomMax: 10,
       },
     });
+
+    renderLeftPanel(config_data);
 
     s.camera.goTo({
       x: 0,
@@ -233,19 +266,19 @@ $.getJSON('data.json', function (data) {
       ratio: 3
     });
 
-    var filter = new sigma.plugins.filter(s);
+    s_filter = new sigma.plugins.filter(s);
 
     s.bind('clickNode', function(e) {
-      filter.undo()
-      filter.neighborsOf(e.data.node.id).apply();
-      $('#rightpanel').html(getNodeInfos(s, e))
-      $('#rightpanel').show()
+      selectNode(e.data.node.id)
     });
 
     s.bind('clickStage', function(e) {
-      filter.undo().apply();
+      s_filter.undo().apply();
       $('#rightpanel').hide();
+      window.location.hash = '';
     });
+
+    window.onhashchange = locationHashChanged;
   });
 });
 </script>
