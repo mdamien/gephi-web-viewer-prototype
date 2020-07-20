@@ -26,17 +26,24 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
       overflow: scroll;
     }
-    #infopane > div {
-      margin: 10px;
-      overflow-x: auto;
+    #mainpanel {
+      margin-top: 50px;
+      margin-left: 25px;
+      background: #fff;
+      background-color: rgb(255, 255, 255);
+      background-color: rgba(255,255,255,0.8);
+      border: 1px solid #ccc;
+      position: fixed;
+      top: 0;
+      padding: 10px;
     }
   </style>
 </head>
 </body>
 <div>
   <div id="graph-container"></div>
-  <div id="infopane">
-  </div>
+  <div id="mainpanel"></div>
+  <div id="infopane"></div>
 </div>
 
 <script>
@@ -172,42 +179,51 @@ function getNodeLinkInfos(s, e) {
     return html
 }
 
+function renderMainPanel(config_data) {
+  $('#mainpanel').text(config_data.text.title)
+}
+
 $.getJSON('data.json', function (data) {
-  var g = parseJSON(data);
+  $.getJSON('config.json', function (config_data) {
+    renderMainPanel(config_data);
 
-  var s = new sigma({
-    graph: g, 
-    renderer: {
-      container: 'graph-container',
-      type: sigma.renderers.canvas,
-    },
-    settings: {
-      hideEdgesOnMove: true,
-      maxNodeSize: 10,
-      minNodeSize: 0.00001,
-      autoRescale: false,
-    },
-  });
+    var g = parseJSON(data);
 
-  s.camera.goTo({
-    x: 0,
-    y: 0,
-    angle: 0,
-    ratio: 3
-  });
+    var s = new sigma({
+      graph: g, 
+      renderer: {
+        container: 'graph-container',
+        type: sigma.renderers.canvas,
+      },
+      settings: {
+        hideEdgesOnMove: true,
+        maxNodeSize: 10,
+        minNodeSize: 0.00001,
+        autoRescale: false,
+      },
+    });
 
-  var filter = new sigma.plugins.filter(s);
+    s.camera.goTo({
+      x: 0,
+      y: 0,
+      angle: 0,
+      ratio: 3
+    });
 
-  s.bind('clickNode', function(e) {
-    filter.undo()
-    filter.neighborsOf(e.data.node.id).apply();
-    $('#infopane').html(getNodeInfos(s, e))
-    $('#infopane').show()
-  });
+    var filter = new sigma.plugins.filter(s);
 
-  s.bind('clickStage', function(e) {
-    filter.undo().apply();
-    $('#infopane').hide();
+
+    s.bind('clickNode', function(e) {
+      filter.undo()
+      filter.neighborsOf(e.data.node.id).apply();
+      $('#infopane').html(getNodeInfos(s, e))
+      $('#infopane').show()
+    });
+
+    s.bind('clickStage', function(e) {
+      filter.undo().apply();
+      $('#infopane').hide();
+    });
   });
 });
 </script>
