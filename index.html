@@ -3,6 +3,7 @@
 <head>
   <title>gephi-web-viewer</title>
   <script src="static/jquery.js" ></script>
+  <script src="static/lys.js" ></script>
   <script src="static/sigma.js" ></script>
   <script src="static/plugins.js" ></script>
   <style>
@@ -96,27 +97,30 @@ function nodeByID(id) {
 }
 
 function getNodeInfos(node) {
-  html = "<h2>" + node.label + "</h2>";
-  html += getNodeAttributesInfos(node)
-  html += '<hr>'
-  html += getNodeLinkInfos(node)
+  html = L.render([
+    L.h2(node.label),
+    getNodeAttributesInfos(node),
+    L.hr(),
+    getNodeLinkInfos(node)
+  ])
   return html
 }
 
 function getNodeAttributesInfos(node) {
   var attributes = node.attributes;
-  var attributes_text = '';
+  var attributes_html = [];
 
   for (attribute in attributes) {
     var value = attributes[attribute];
-    attributes_text += "<strong>" + attribute + ': ' + "</strong>" + value + '<br><br>'
+    attributes_html.push([
+      L.strong(attribute + ': '),
+      value,
+      L.br(),
+      L.br(),
+    ])
   }
 
-  if (attributes_text) {
-    attributes_text += '\n\n'
-  }
-
-  return attributes_text;
+  return attributes_html;
 }
 
 function getNodeLinkInfos(node) {
@@ -154,54 +158,50 @@ function getNodeLinkInfos(node) {
 
     var mutual_html = ''
     if (mutual.length) {
-      mutual_html = '<strong>Mutal</strong><br>'
-      mutual_html += '<ul>'
-      mutual.forEach(node => {
-        mutual_html += '<li>'
-        mutual_html += '<a href="#' + node.id + '">'
-        mutual_html += node.label
-        mutual_html += '</a>'
-        mutual_html += '</li>'
-      })
-      mutual_html += '</ul>'
+      mutual_html = [
+        L.strong("Mutal"),
+        L.br(),
+        L.ul(mutual.map(node => 
+          L.li(L.a(node.label, {href: '#'+node.id}))
+        ))
+      ]
     }
     var incoming_html = ''
     if (incoming.length) {
-      incoming_html = '<strong>Incoming</strong><br>'
-      incoming_html += '<ul>'
-      incoming.forEach(node => {
-        incoming_html += '<li>'
-        incoming_html += '<a href="#' + node.id + '">'
-        incoming_html += node.label
-        incoming_html += '</a>'
-        incoming_html += '</li>'
-      })
-      incoming_html += '</ul>'
+      incoming_html = [
+        L.strong("Incoming"),
+        L.br(),
+        L.ul(incoming.map(node => 
+          L.li(L.a(node.label, {href: '#'+node.id}))
+        ))
+      ]
     }
     var outcoming_html = ''
     if (outcoming.length) {
-      outcoming_html = '<strong>Outcoming</strong><br>'
-      outcoming_html += '<ul>'
-      outcoming.forEach(node => {
-        outcoming_html += '<li>'
-        outcoming_html += '<a href="#' + node.id + '">'
-        outcoming_html += node.label
-        outcoming_html += '</a>'
-        outcoming_html += '</li>'
-      })
-      outcoming_html += '</ul>'
+      outcoming_html = [
+        L.strong("Outcoming"),
+        L.br(),
+        L.ul(outcoming.map(node => 
+          L.li(L.a(node.label, {href: '#'+node.id}))
+        ))
+      ]
     }
-    html = "<p><strong>" + "Connections" + "</strong></p>"
-    html += mutual_html
-    html += incoming_html
-    html += outcoming_html
+    html = [
+      L.p(L.strong("Connections")),
+      mutual_html,
+      incoming_html,
+      outcoming_html,
+    ]
     return html
 }
 
 function renderLeftPanel(config_data) {
-  html = "<h3>" + config_data.text.title + "</h3>"
-  html += "<p><input type='text' placeholder='search'/></p>"
-  html += "<p id='search-results'></p>"
+  html = L.render([
+    L.h3(config_data.text.title),
+    L.p(L.input('', {placeholder: 'search'})),
+    L.p('', {id: 'search-results'}),
+  ])
+
   $('#leftpanel').html(html)
   $('#leftpanel input').on('input', function() {
     var q = $(this).val().toLowerCase();
@@ -211,15 +211,12 @@ function renderLeftPanel(config_data) {
     }
     html_results = ''
     if (results.length) {
-      html_results = '<ul>'
-      results.forEach(node => {
-        html_results += '<li>'
-        html_results += '<a href="#' + node.id + '">'
-        html_results += node.label
-        html_results += '</a>'
-        html_results += '</li>'
+      html_results_list = []
+      results.forEach((node, i) => {
+        if (i > 10) return;
+        html_results_list.push(L.li(L.a(node.label, {href: '#' + node.id})))
       })
-      html_results += '</ul>'
+      html_results = L.render(L.ul(html_results_list))
     }
     $('#search-results').html(html_results);
   })
