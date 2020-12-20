@@ -224,7 +224,7 @@ function renderLeftPanel(config_data) {
 
 function locationHashChanged() {
   if (location.hash) {
-    var node_id = location.hash.substring(1)
+    var node_id = decodeURIComponent(location.hash.substring(1))
     selectNode(node_id);
   }
 }
